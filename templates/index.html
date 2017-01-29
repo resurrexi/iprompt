@@ -7,37 +7,45 @@
         <div class="jumbotron">
             <div class="container">
                 <h1>Welcome to iPrompt, the interactive prompt app.</h1>
-                <p>This is the landing page. There's nothing much here to see... because its still a prototype...</p>
+                <p class="lead">This is the landing page. There's nothing much here to see... because its still a prototype...</p>
             </div>
         </div>
         <div class="container">
             <div class="row row-content">
-                <div class="col-sm-12">
-                    <h2>Instructions</h2>
-                    <hr>
+                <div class="col-sm-12 feature-div">
+                    <h1>How it works</h1>
                     <div class="col-sm-4">
-                        <div class="col-sm-12">
-                            <h3>1. Add iPrompt's number to your contact list</h3>
-                        </div>
-                        <div class="col-sm-12">
-                            <img src="{{ url_for('static', filename='img/step01.png') }}" class="img-responsive" alt="Step 1">
-                        </div>
-                    </div>
-                    <div class="col-sm-4" style="height: 100%">
-                        <div class="col-sm-12">
-                            <h3>2. Pick a letter choice from the question</h3>
-                        </div>
-                        <div class="col-sm-12">
-                            <img src="{{ url_for('static', filename='img/step02.png') }}" class="img-responsive" alt="Step 2">
-                        </div>
+                        <h3>
+                            <span class="fa-stack fa-1x">
+                                <i class="fa fa-circle-o fa-stack-2x"></i>
+                                <strong class="fa-stack-1x">1</strong>
+                            </span>
+                        </h3>
+                        <h3>Add iPrompt's number</h3>
+                        <hr class="half-rule">
+                        <img src="{{ url_for('static', filename='img/step01.png') }}" class="img-responsive" alt="Step 1">
                     </div>
                     <div class="col-sm-4">
-                        <div class="col-sm-12">
-                            <h3>3. Text your letter choice to iPrompt</h3>
-                        </div>
-                        <div class="col-sm-12">
-                            <img src="{{ url_for('static', filename='img/step03.png') }}" class="img-responsive" alt="Step 3">
-                        </div>
+                        <h3>
+                            <span class="fa-stack fa-1x">
+                                <i class="fa fa-circle-o fa-stack-2x"></i>
+                                <strong class="fa-stack-1x">2</strong>
+                            </span>
+                        </h3>
+                        <h3>Pick a letter choice</h3>
+                        <hr class="half-rule">
+                        <img src="{{ url_for('static', filename='img/step02.png') }}" class="img-responsive" alt="Step 2">
+                    </div>
+                    <div class="col-sm-4">
+                        <h3>
+                            <span class="fa-stack fa-1x">
+                                <i class="fa fa-circle-o fa-stack-2x"></i>
+                                <strong class="fa-stack-1x">3</strong>
+                            </span>
+                        </h3>
+                        <h3>Text your choice</h3>
+                        <hr class="half-rule">
+                        <img src="{{ url_for('static', filename='img/step03.png') }}" class="img-responsive" alt="Step 3">
                     </div>
                 </div>
             </div>

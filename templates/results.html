@@ -18,12 +18,16 @@
 			</script>
 		{%- endif %}
 		<div class="container">
-			{% if poll_open -%}
-				<h1>Polling is still in effect. Please wait until poll is closed.</h1>
-			{%- else -%}
-				<h3>Results</h3>
-				<div class="row row-content">
+			<div class="row row-content">
+				<div class="col-sm-12">
+					<p style="padding-top: 20px"></p>
+				</div>
+				{% if poll_open -%}
+					<h1>Polling is still in effect. Please wait until poll is closed.</h1>
+				{%- else -%}
 					<div class="col-sm-12">
+						<h3>Results</h3>
+						<hr>
 						<h4>Respondents: {{ respondent_ct }}</h4>
 						<h4>Readiness score: {{ "{:.1%}".format(score) }}</h4>
 					</div>
@@ -46,9 +50,8 @@
 							</div>
 						</div>
 					{%- endfor %}
-					</div>
-				</div>
-			{%- endif %}
+				{%- endif %}
+			</div>
 		</div>
 	</main>
 {%- endblock %}
