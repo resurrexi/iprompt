@@ -1,0 +1,56 @@
+{%- extends "layout.html" -%}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content -%}
+	<main role="main">
+		<div class="container">
+			<div class="row row-content">
+				<div class="col-sm-offset-2 col-sm-8">
+					{% if question -%}
+						<div class="panel panel-primary">
+							<div class="panel-heading">
+								<h3 class="panel-title">Question {{ question }}</h3>
+							</div>
+							<div class="panel-body">
+								<p>{{ prompt | safe }}</p>
+							</div>
+							<ul class="list-group">
+								{% if allow == 0 -%}
+									<li class="list-group-item list-group-item-info">Polling is closed. Choices unavailable...</li>
+								{%- else -%}
+									{% for choice in choices -%}
+										<li class="list-group-item"><span class="badge">{{ choice[0] }}</span>{{ choice[1] }}</li>
+									{%- endfor %}
+								{%- endif %}
+							</ul>
+						</div>
+						<div class="col-xs-12">
+							<div class="row row-content">
+								<div class="col-xs-6">
+									{% if question > 1 -%}
+										<p><a href="{{ url_for('display_question', question=question-1) }}"><button type="button" class="btn btn-default btn-sm"><span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span> Previous</button></a></p>
+									{%- endif %}
+								</div>
+								<div class="col-xs-6">
+									{% if question < q_dict.keys() | last -%}
+										<p style="text-align: right"><a href="{{ url_for('display_question', question=question+1) }}"><button type="button" class="btn btn-default btn-sm">Next <span class="glyphicon glyphicon-chevron-right" aria-hidden="true"></span></button></a></p>
+									{%- endif %}
+								</div>
+							</div>
+						</div>
+					{%- else -%}
+						<div class="list-group">
+							{% for q in q_dict -%}
+								<a href="{{ url_for('display_question', question=q) }}" class="list-group-item">
+									<h4 class="list-group-item-heading">Question {{ q }}</h4>
+									<p class="list-group-item-text">{{ q_dict[q] | safe }}</p>
+								</a>
+							{%- endfor %}
+						</
+					{%- endif %}
+				</div>
+			</div>
+		</div>
+	</main>
+{%- endblock %}

@@ -1,0 +1,726 @@
+
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h1 id="War-of-Ride-Sharing-in-NYC">War of Ride Sharing in NYC<a class="anchor-link" href="#War-of-Ride-Sharing-in-NYC">&#182;</a></h1><p>Uber and Lyft have been rivals when it comes to the ride sharing business. However, when comparing the two companies, who gets most of the NYC market? I did some preliminary exploration on articles I read about Uber's and Lyft's business model. From the looks of it, Uber is cheaper than Lyft. Not to mention, Uber has been around longer so it gets experience and market penetration for an advantage as well. I did find that drivers do seem more satisfied with working for Lyft over Uber, but I don't think that will really affect the market share. Afterall, from a consumer's point of view, I would probably go for the cheaper service. Therefore, my hypothesis is that Uber services more rides than Lyft in NYC.</p>
+<p>To test my hypothesis, I'll explore the data provided <a href="https://www.kaggle.com/fivethirtyeight/uber-pickups-in-new-york-city">here</a>.</p>
+<p>I'll first import the necessary modules for my project.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[124]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="kn">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">geocoder</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">calendar</span>
+<span class="kn">from</span> <span class="nn">random</span> <span class="kn">import</span> <span class="n">randint</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">sleep</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next I define my variables that I will use downstream. Also, I'm only loading just a few datasets from the available datasets in the archive file, because just a quick glance at Lyft's raw data shows that the timeframe starts from July 2014 and ends in September 2014. Therefore, it is not necessary for me to define all the CSV paths for Uber's raw data because I would like to compare the same timeframes for the two companies.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[3]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">APIkey</span><span class="o">=</span> <span class="s1">&#39;xxxsecretxxx&#39;</span>  <span class="c1"># Google API key for geocoding</span>
+<span class="n">directory</span> <span class="o">=</span> <span class="s1">&#39;C:/Users/resurrexi/Dropbox/Kaggle/Uber Pickups NYC&#39;</span>
+<span class="n">lyft</span> <span class="o">=</span> <span class="s1">&#39;other-Lyft_B02510.csv&#39;</span>
+<span class="n">uber</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;uber-raw-data-jul14.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;uber-raw-data-aug14.csv&#39;</span><span class="p">,</span> <span class="s1">&#39;uber-raw-data-sep14.csv&#39;</span><span class="p">]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>With my variables defined, I can now load my datasets. I will define my datasets as <code>lyft_data</code>, which is the raw data for Lyft, and <code>uber_data</code>, which is the combined raw data for Uber between July and September of 2014.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[53]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Load datasets</span>
+<span class="n">lyft_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">lyft</span><span class="p">),</span>
+                        <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;time_of_trip&#39;</span><span class="p">,</span> <span class="s1">&#39;start_lat&#39;</span><span class="p">,</span> <span class="s1">&#39;start_lng&#39;</span><span class="p">])</span>
+<span class="n">lyft_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="s1">&#39;Latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;Longitude&#39;</span><span class="p">]</span>
+
+<span class="n">uber_data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">ds</span> <span class="ow">in</span> <span class="n">uber</span><span class="p">:</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">ds</span><span class="p">),</span>
+                          <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Date/Time&#39;</span><span class="p">,</span> <span class="s1">&#39;Lat&#39;</span><span class="p">,</span> <span class="s1">&#39;Lon&#39;</span><span class="p">])</span>
+    <span class="n">uber_data</span> <span class="o">=</span> <span class="n">uber_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+<span class="n">uber_data</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="s1">&#39;Latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;Longitude&#39;</span><span class="p">]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now, when it comes to reading CSV files, pandas doesn't really do a good job recognizing datetime columns. It usually sets those as string objects. In this case, I will explicitly define the <em>Datetime</em> column for both of my datasets as a datetime column. Note that I also have to specify the format in which the datetime appears in the datasets. For <code>lyft_data</code>, it's missing the seconds, so I will want to exclude that in my format argument.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[54]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Cast Datetime column as datetime type</span>
+<span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">],</span> <span class="n">format</span><span class="o">=</span><span class="s2">&quot;%m/</span><span class="si">%d</span><span class="s2">/%Y %H:%M&quot;</span><span class="p">)</span>
+<span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_datetime</span><span class="p">(</span><span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">],</span> <span class="n">format</span><span class="o">=</span><span class="s2">&quot;%m/</span><span class="si">%d</span><span class="s2">/%Y %H:%M:%S&quot;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Let's go ahead and take a look at the two datasets and see if everything looks right.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[55]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">lyft_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">Out[55]:</div>
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Datetime</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2014-09-04 09:51:00</td>
+      <td>40.64705</td>
+      <td>-73.77988</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2014-08-27 21:13:00</td>
+      <td>40.74916</td>
+      <td>-73.98373</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2014-09-04 14:16:00</td>
+      <td>40.64065</td>
+      <td>-73.97594</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2014-09-04 16:08:00</td>
+      <td>40.75002</td>
+      <td>-73.99514</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2014-08-28 02:41:00</td>
+      <td>40.76715</td>
+      <td>-73.98636</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[57]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">uber_data</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">Out[57]:</div>
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Datetime</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2014-07-01 00:03:00</td>
+      <td>40.7586</td>
+      <td>-73.9706</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2014-07-01 00:05:00</td>
+      <td>40.7605</td>
+      <td>-73.9994</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2014-07-01 00:06:00</td>
+      <td>40.7320</td>
+      <td>-73.9999</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2014-07-01 00:09:00</td>
+      <td>40.7635</td>
+      <td>-73.9793</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2014-07-01 00:20:00</td>
+      <td>40.7204</td>
+      <td>-74.0047</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Ok, so everything looks right. However, I really want to make sure I'm comparing the same timeframe between the two datasets, so I'll do a diagnostic check here to see what each dataset's min and max dates are.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[59]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="k">print</span> <span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>2014-07-25 23:01:00
+2014-09-30 23:59:00
+2014-07-01 00:00:00
+2014-09-30 22:59:00
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It looks like for Lyft, the date doesn't start until July 25th, and for Uber, the timestamp on September 30th is 22:59. I'm not too sure why Lyft is missing the first 24 days of July but I'll definitely want to narrow my timeframe boundaries from these observations.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[60]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Looks like there&#39;s varying mins and maxes so let&#39;s narrow the timeframe boundaries.</span>
+<span class="n">min_date</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+<span class="n">max_date</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<span class="n">lyft_data</span> <span class="o">=</span> <span class="n">lyft_data</span><span class="p">[(</span><span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_date</span><span class="p">)]</span>
+<span class="n">uber_data</span> <span class="o">=</span> <span class="n">uber_data</span><span class="p">[(</span><span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">min_date</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_date</span><span class="p">)]</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Ok, with the boundaries set, let's see how many records we can be expecting from the two datasets.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[61]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Print dimensions of the datasets</span>
+<span class="k">print</span> <span class="n">lyft_data</span><span class="o">.</span><span class="n">shape</span>
+<span class="k">print</span> <span class="n">uber_data</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt"></div>
+<div class="output_subarea output_stream output_stdout output_text">
+<pre>(267489, 3)
+(2025283, 3)
+</pre>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>It definitely looks like Uber takes the lead in terms of servicing rides in the city, so my hypothesis holds true. However, that doesn't mean that it dominates in certain times of week/year, or maybe even regions, so I'm going to drill deeper and test if Uber's domination really holds. I'll begin by creating an additional column that tags which company the dataset is associated with, and then combine the two datasets.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[120]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Let&#39;s combine the datasets</span>
+<span class="n">lyft_data</span><span class="p">[</span><span class="s1">&#39;Company&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Lyft&#39;</span>
+<span class="n">uber_data</span><span class="p">[</span><span class="s1">&#39;Company&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Uber&#39;</span>
+<span class="n">alldata</span> <span class="o">=</span> <span class="n">lyft_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">uber_data</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Next, I'll define the groups I'm interested in evaluating the two companies across. Those would be the date, month, weekday, and hour. These groupings might be able to capture trends, seasonality changes, or patterns. Since these groupings can be extracted from my <em>Datetime</em> column, I'll do just that.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[125]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">date</span>
+<span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Month&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">month</span><span class="p">)</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">calendar</span><span class="o">.</span><span class="n">month_name</span><span class="p">[</span><span class="n">x</span><span class="p">])</span>
+<span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Weekday&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">weekday_name</span>
+<span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Hour&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Datetime&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">dt</span><span class="o">.</span><span class="n">hour</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[126]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Check if datetime extraction worked</span>
+<span class="n">alldata</span><span class="o">.</span><span class="n">head</span><span class="p">()</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">Out[126]:</div>
+
+<div class="output_html rendered_html output_subarea output_execute_result">
+<div>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Datetime</th>
+      <th>Latitude</th>
+      <th>Longitude</th>
+      <th>Company</th>
+      <th>Date</th>
+      <th>Month</th>
+      <th>Weekday</th>
+      <th>Hour</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>2014-09-04 09:51:00</td>
+      <td>40.64705</td>
+      <td>-73.77988</td>
+      <td>Lyft</td>
+      <td>2014-09-04</td>
+      <td>September</td>
+      <td>Thursday</td>
+      <td>9</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>2014-08-27 21:13:00</td>
+      <td>40.74916</td>
+      <td>-73.98373</td>
+      <td>Lyft</td>
+      <td>2014-08-27</td>
+      <td>August</td>
+      <td>Wednesday</td>
+      <td>21</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>2014-09-04 14:16:00</td>
+      <td>40.64065</td>
+      <td>-73.97594</td>
+      <td>Lyft</td>
+      <td>2014-09-04</td>
+      <td>September</td>
+      <td>Thursday</td>
+      <td>14</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>2014-09-04 16:08:00</td>
+      <td>40.75002</td>
+      <td>-73.99514</td>
+      <td>Lyft</td>
+      <td>2014-09-04</td>
+      <td>September</td>
+      <td>Thursday</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>2014-08-28 02:41:00</td>
+      <td>40.76715</td>
+      <td>-73.98636</td>
+      <td>Lyft</td>
+      <td>2014-08-28</td>
+      <td>August</td>
+      <td>Thursday</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>With these additional columns, I can now aggregate on these columns. The aggregation is really simple. I basically count by the columns that I defined earlier.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[133]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Run some aggregations on the new variables</span>
+<span class="n">alldata_by_date</span> <span class="o">=</span> <span class="n">alldata</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+<span class="n">alldata_by_month</span> <span class="o">=</span> <span class="n">alldata</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Month&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+<span class="n">alldata_by_weekday</span> <span class="o">=</span> <span class="n">alldata</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Weekday&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+<span class="n">alldata_by_hour</span> <span class="o">=</span> <span class="n">alldata</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Hour&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[134]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Generate aggregated counts to CSV</span>
+<span class="n">alldata_by_date</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_date.csv&#39;</span><span class="p">))</span>
+<span class="n">alldata_by_month</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_month.csv&#39;</span><span class="p">))</span>
+<span class="n">alldata_by_weekday</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_weekday.csv&#39;</span><span class="p">))</span>
+<span class="n">alldata_by_hour</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_hour.csv&#39;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Now I have my separate CSV files with the counts by the various time groupings. However, another grouping I'm interested in is region. In this case, the coordinates provided in the data will allow me to reverse geocode to an address.</p>
+<p>I use Google's Geocoding API for this task, but due to the API's usage limitations and associated cost for any requests over the 2,500 allowance, I am forced to sample a subset from the overall population. In this case, I decide to sample only rides made in September 1st, and make the assumption that the general distribution of the rides across the geographic territories is the same in the other days. Of course, this is a wild assumption considering I'm only sampling 1 day and extrapolating to all other days, but if Google offered more free allowances, I would have certainly used a larger sample or the entire population.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[102]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Any differences in territories covered by the rivals?</span>
+<span class="c1"># Let&#39;s take a subset since Google Geocoding API has usage limitations</span>
+<span class="n">alldata_sample</span> <span class="o">=</span> <span class="n">alldata</span><span class="p">[</span><span class="n">alldata</span><span class="p">[</span><span class="s1">&#39;Date&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">date</span><span class="p">(</span><span class="mi">2014</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+<span class="n">alldata_sample</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+<div class="output_wrapper">
+<div class="output">
+
+
+<div class="output_area"><div class="prompt output_prompt">Out[102]:</div>
+
+
+<div class="output_text output_subarea output_execute_result">
+<pre>(25452, 8)</pre>
+</div>
+
+</div>
+
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>So the sample is about 25k rows, which isn't too bad. Now, I'll reverse geocode the coordinates and write the results to a CSV file. I wanted to pull county information from the coordinates, but unfortunately, the API doesn't return a county. Therefore, the territories I'll pull will be <strong>neighborhood</strong> and <strong>borough</strong>. If you're coding along as you read this, you'll want to find something else to do in the meantime because this process will take a couple of hours.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[117]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Comment this out after CSV is generated or it&#39;ll take several hours to get all the geocodes again...</span>
+<span class="k">try</span><span class="p">:</span>  <span class="c1"># checks if there&#39;s an existing geocoded file, which will be used to append additional geocodes to</span>
+    <span class="n">geocoded</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;data_geocoded.csv&#39;</span><span class="p">),</span> <span class="n">usecols</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;Index&#39;</span><span class="p">])</span>
+    <span class="n">last_idx</span> <span class="o">=</span> <span class="n">geocoded</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;append&#39;</span>
+<span class="k">except</span> <span class="ne">IOError</span><span class="p">:</span>
+    <span class="n">mode</span> <span class="o">=</span> <span class="s1">&#39;write&#39;</span>
+
+<span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;append&#39;</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;data_geocoded.csv&#39;</span><span class="p">),</span> <span class="s1">&#39;ab&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">item</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">alldata_sample</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="n">last_idx</span><span class="p">:]</span><span class="o">.</span><span class="n">itertuples</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">idx</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="n">g</span> <span class="o">=</span> <span class="n">geocoder</span><span class="o">.</span><span class="n">google</span><span class="p">([</span><span class="n">item</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;reverse&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">APIkey</span><span class="p">)</span>
+                    <span class="n">item</span> <span class="o">=</span> <span class="n">item</span> <span class="o">+</span> <span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">neighborhood</span><span class="p">,</span> <span class="n">g</span><span class="o">.</span><span class="n">sublocality</span><span class="p">)</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="k">pass</span>
+<span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;write&#39;</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;data_geocoded.csv&#39;</span><span class="p">),</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">writer</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+        <span class="n">w</span><span class="o">.</span><span class="n">writerow</span><span class="p">([</span><span class="s1">&#39;Index&#39;</span><span class="p">,</span> <span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="s1">&#39;Latitude&#39;</span><span class="p">,</span> <span class="s1">&#39;Longitude&#39;</span><span class="p">,</span> <span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="s1">&#39;Date&#39;</span><span class="p">,</span> <span class="s1">&#39;Month&#39;</span><span class="p">,</span>
+                    <span class="s1">&#39;Weekday&#39;</span><span class="p">,</span> <span class="s1">&#39;Hour&#39;</span><span class="p">,</span> <span class="s1">&#39;Neighborhood&#39;</span><span class="p">,</span> <span class="s1">&#39;Borough&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">alldata_sample</span><span class="o">.</span><span class="n">itertuples</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">g</span> <span class="o">=</span> <span class="n">geocoder</span><span class="o">.</span><span class="n">google</span><span class="p">([</span><span class="n">item</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">item</span><span class="p">[</span><span class="mi">3</span><span class="p">]],</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;reverse&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">APIkey</span><span class="p">)</span>
+                <span class="n">item</span> <span class="o">=</span> <span class="n">item</span> <span class="o">+</span> <span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">neighborhood</span><span class="p">,</span> <span class="n">g</span><span class="o">.</span><span class="n">sublocality</span><span class="p">)</span>
+                <span class="n">w</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">item</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">pass</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<p>Alright, the file is finally generated. Let's read the file and then generate our aggregations.</p>
+
+</div>
+</div>
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[135]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Read the geocoded file and aggregate by neighborhood and borough</span>
+<span class="n">sample</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;data_geocoded.csv&#39;</span><span class="p">))</span>
+<span class="n">sample_by_neighborhood</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Neighborhood&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+<span class="n">sample_by_borough</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">pivot_table</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="s1">&#39;Borough&#39;</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="s1">&#39;Datetime&#39;</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="s1">&#39;Company&#39;</span><span class="p">,</span> <span class="n">aggfunc</span><span class="o">=</span><span class="s1">&#39;count&#39;</span><span class="p">)</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing code_cell rendered">
+<div class="input">
+<div class="prompt input_prompt">In&nbsp;[136]:</div>
+<div class="inner_cell">
+    <div class="input_area">
+<div class=" highlight hl-ipython2"><pre><span></span><span class="c1"># Generate aggregated counts to CSV</span>
+<span class="n">sample_by_neighborhood</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_neighborhood.csv&#39;</span><span class="p">))</span>
+<span class="n">sample_by_borough</span><span class="o">.</span><span class="n">to_csv</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="s1">&#39;rides_by_borough.csv&#39;</span><span class="p">))</span>
+</pre></div>
+
+</div>
+</div>
+</div>
+
+</div>
+<div class="cell border-box-sizing text_cell rendered">
+<div class="prompt input_prompt">
+</div>
+<div class="inner_cell">
+<div class="text_cell_render border-box-sizing rendered_html">
+<h2 id="Visualizations-for-Exploration">Visualizations for Exploration<a class="anchor-link" href="#Visualizations-and-Data-for-Exploration">&#182;</a></h2>
+</div>
+</div>
+</div>

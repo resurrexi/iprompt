@@ -1,0 +1,54 @@
+{%- extends "layout.html" -%}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content -%}
+	<main role="main">
+		{# Highcharts modules -#}
+		<script src="https://code.highcharts.com/5.0.6/highcharts.js"></script>
+		<script src="https://code.highcharts.com/5.0.6/modules/drilldown.js"></script>
+		{% if not poll_open -%}
+			{# Generate chart data as a JSON object -#}
+			<script type="text/javascript">
+				$(document).ready(function() {
+					{% for key in result -%}
+						new Highcharts.Chart({{ result[key]|safe }});
+					{%- endfor %}
+				});
+			</script>
+		{%- endif %}
+		<div class="container">
+			{% if poll_open -%}
+				<h1>Polling is still in effect. Please wait until poll is closed.</h1>
+			{%- else -%}
+				<h3>Results</h3>
+				<div class="row row-content">
+					<div class="col-sm-12">
+						<h4>Respondents: {{ respondent_ct }}</h4>
+						<h4>Readiness score: {{ "{:.1%}".format(score) }}</h4>
+					</div>
+					{% for q in q_dict -%}
+						<div class="col-sm-12">
+							<div class="panel panel-default">
+								<div class="panel-heading">
+									<h3 class="panel-title">Question {{ q }}</h3>
+								</div>
+								<div class="panel-body">
+									<p>{{ q_dict[q] | safe }}</p>
+								</div>
+								{% if result.get(q, None) -%}
+									<div id="chart{{ q }}"></div>
+								{%- else -%}
+									<ul class="list-group">
+										<li class="list-group-item list-group-item-info">No answers were logged during the polling session.</li>
+									</ul>
+								{%- endif %}
+							</div>
+						</div>
+					{%- endfor %}
+					</div>
+				</div>
+			{%- endif %}
+		</div>
+	</main>
+{%- endblock %}
