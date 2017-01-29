@@ -1,3 +1,3 @@
-# IPUS (Interactive presentation using SMS)
+# iPrompt, the interactive prompt app
 
 Liven up your presentation using SMS
